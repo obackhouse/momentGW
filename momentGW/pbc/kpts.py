@@ -36,6 +36,22 @@ def allow_single_kpt(output_is_kpts=False):
 
 
 class KPoints:
+    """Helper class to handle k-points.
+
+    Parameters
+    ----------
+    cell : pyscf.pbc.gto.cell.Cell
+        PySCF cell object.
+    kpts : ndarray
+        List of k-points.
+    tol : float, optional
+        Tolerance for determining whether two k-points are equivalent.
+        Default value is `1e-8`.
+    wrap_around : bool, optional
+        Whether to wrap k-points around the first Brillouin zone.
+        Default value is `True`.
+    """
+
     def __init__(self, cell, kpts, tol=1e-8, wrap_around=True):
         self.cell = cell
         self.tol = tol

@@ -17,10 +17,10 @@ class ChemicalPotentialError(ValueError):
 
 
 def _gradient(x, se, fock, nelec, occupancy=2, buf=None):
-    """Gradient of the number of electrons w.r.t shift in auxiliary
-    energies.
     """
-    # TODO buf
+    Gradient of the number of electrons with respect to a shift in
+    auxiliary energies.
+    """
 
     ws, vs = zip(*[s.eig(f, chempot=x) for s, f in zip(se, fock)])
     chempot, error = search_chempot(ws, vs, se[0].nphys, nelec)
@@ -45,8 +45,31 @@ def _gradient(x, se, fock, nelec, occupancy=2, buf=None):
 def search_chempot_constrained(w, v, nphys, nelec, occupancy=2):
     """
     Search for a chemical potential, constraining the k-point
-    dependent occupancy to ensure no crossover of states. If this
-    is not possible, a ValueError will be raised.
+    dependent occupancy to ensure no crossover of states.
+
+    Parameters
+    ----------
+    w : list of numpy.ndarray
+        Eigenvalues of the Fock matrix at each k-point.
+    v : list of numpy.ndarray
+        Eigenvectors of the Fock matrix at each k-point.
+    nphys : int
+        Number of physical orbitals.
+    nelec : float
+        Number of electrons.
+    occupancy : int, optional
+        Number of electrons per orbital. Default is `2`.
+
+    Returns
+    -------
+    chempot : float
+        Chemical potential.
+
+    Raises
+    ------
+    ChemicalPotentialError
+        If a chemical potential cannot be found under the constraint
+        that the k-point dependent occupancy does not cross over.
     """
 
     nmo = max(len(x) for x in w)
@@ -82,7 +105,7 @@ def search_chempot_constrained(w, v, nphys, nelec, occupancy=2):
         if e_homo > e_lumo:
             raise ChemicalPotentialError(
                 "Could not find a chemical potential under "
-                "the constrain of equal k-point occupancy."
+                "the constraint of equal k-point occupancy."
             )
 
         chempot = 0.5 * (e_homo + e_lumo)
@@ -94,6 +117,24 @@ def search_chempot_unconstrained(w, v, nphys, nelec, occupancy=2):
     """
     Search for a chemical potential, without constraining the
     k-point dependent occupancy.
+
+    Parameters
+    ----------
+    w : list of numpy.ndarray
+        Eigenvalues of the Fock matrix at each k-point.
+    v : list of numpy.ndarray
+        Eigenvectors of the Fock matrix at each k-point.
+    nphys : int
+        Number of physical orbitals.
+    nelec : float
+        Number of electrons.
+    occupancy : int, optional
+        Number of electrons per orbital. Default value is `2`.
+
+    Returns
+    -------
+    chempot : float
+        Chemical potential.
     """
 
     kidx = np.concatenate([[i] * x.size for i, x in enumerate(w)])
@@ -138,6 +179,24 @@ def search_chempot(w, v, nphys, nelec, occupancy=2):
     """
     Search for a chemical potential, first trying with k-point
     restraints and if that doesn't succeed then without.
+
+    Parameters
+    ----------
+    w : list of numpy.ndarray
+        Eigenvalues of the Fock matrix at each k-point.
+    v : list of numpy.ndarray
+        Eigenvectors of the Fock matrix at each k-point.
+    nphys : int
+        Number of physical orbitals.
+    nelec : float
+        Number of electrons.
+    occupancy : int, optional
+        Number of electrons per orbital. Default value is `2`.
+
+    Returns
+    -------
+    chempot : float
+        Chemical potential.
     """
 
     try:
@@ -152,6 +211,30 @@ def minimize_chempot(se, fock, nelec, occupancy=2, x0=0.0, tol=1e-6, maxiter=200
     """
     Optimise the shift in auxiliary energies to satisfy the electron
     number, ensuring that the same shift is applied at all k-points.
+
+    Parameters
+    ----------
+    se : list of SelfEnergy
+        Self-energy at each k-point.
+    fock : list of numpy.ndarray
+        Fock matrix at each k-point.
+    nelec : float
+        Number of electrons.
+    occupancy : int, optional
+        Number of electrons per orbital. Default is `2`.
+    x0 : float, optional
+        Initial guess for the chemical potential. Default is `0.0`.
+    tol : float, optional
+        Tolerance for the chemical potential. Default is `1e-6`.
+    maxiter : int, optional
+        Maximum number of iterations. Default is `200`.
+
+    Returns
+    -------
+    chempot : float
+        Chemical potential.
+    opt : scipy.optimize.OptimizeResult
+        Optimization result.
     """
 
     tol = tol**2  # we minimize the squared error
@@ -192,8 +275,36 @@ def fock_loop(
     max_cycle_inner=100,
     max_cycle_outer=20,
 ):
-    """Self-consistent loop for the density matrix via the HF self-
-    consistent field.
+    """
+    Self-consistent loop for the density matrix via the Hartree--Fock
+    self-consistent field.
+
+    Parameters
+    ----------
+    gw : BaseKGW
+        GW object.
+    gf : list of GreensFunction
+        Green's function object at each k-point.
+    se : list of SelfEnergy
+        Self-energy object at each k-point.
+    integrals : Integrals, optional
+        Integrals object. If `None`, generate from scratch. Default
+        value is `None`.
+    fock_diis_space : int, optional
+        DIIS space size for the Fock matrix. Default value is `10`.
+    fock_diis_min_space : int, optional
+        Minimum DIIS space size for the Fock matrix. Default value is
+        `1`.
+    conv_tol_nelec : float, optional
+        Convergence tolerance for the number of electrons. Default
+        value is `1e-6`.
+    conv_tol_rdm1 : float, optional
+        Convergence tolerance for the density matrix. Default value is
+        `1e-8`.
+    max_cycle_inner : int, optional
+        Maximum number of inner iterations. Default value is `100`.
+    max_cycle_outer : int, optional
+        Maximum number of outer iterations. Default value is `20`.
     """
 
     if integrals is None:

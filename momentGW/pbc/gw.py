@@ -32,7 +32,18 @@ class KGW(BaseKGW, GW):
         return "KG0W0"
 
     def ao2mo(self, transform=True):
-        """Get the integrals."""
+        """Get the integrals object.
+
+        Parameters
+        ----------
+        transform : bool, optional
+            Whether to transform the integrals object.
+
+        Returns
+        -------
+        integrals : KIntegrals
+            Integrals object.
+        """
 
         integrals = KIntegrals(
             self.with_df,
@@ -56,7 +67,7 @@ class KGW(BaseKGW, GW):
         nmom_max : int
             Maximum moment number to calculate.
         integrals : KIntegrals
-            Density-fitted integrals.
+            Integrals object.
 
         See functions in `momentGW.rpa` for `kwargs` options.
 
@@ -77,8 +88,9 @@ class KGW(BaseKGW, GW):
             raise NotImplementedError
 
     def solve_dyson(self, se_moments_hole, se_moments_part, se_static, integrals=None):
-        """Solve the Dyson equation due to a self-energy resulting
-        from a list of hole and particle moments, along with a static
+        """
+        Solve the Dyson equation due to a self-energy resulting from a
+        list of hole and particle moments, along with a static
         contribution.
 
         Also finds a chemical potential best satisfying the physical
@@ -164,7 +176,20 @@ class KGW(BaseKGW, GW):
         return gf, se
 
     def make_rdm1(self, gf=None):
-        """Get the first-order reduced density matrix at each k-point."""
+        """Get the first-order reduced density matrix.
+
+        Parameters
+        ----------
+        gf : list of GreensFunction, optional
+            Green's function at each k-point. If `None`, use either
+            `self.gf`, or the mean-field Green's function. Default value
+            is `None`.
+
+        Returns
+        -------
+        rdm1 : numpy.ndarray
+            First-order reduced density matrix.
+        """
 
         if gf is None:
             gf = self.gf
@@ -174,7 +199,23 @@ class KGW(BaseKGW, GW):
         return np.array([g.make_rdm1() for g in gf])
 
     def energy_hf(self, gf=None, integrals=None):
-        """Calculate the one-body (Hartree--Fock) energy."""
+        """Calculate the one-body (Hartree--Fock) energy.
+
+        Parameters
+        ----------
+        gf : list of GreensFunction, optional
+            Green's function at each k-point. If `None`, use either
+            `self.gf`, or the mean-field Green's function. Default value
+            is `None`.
+        integrals : KIntegrals, optional
+            Integrals. If `None`, generate from scratch. Default value
+            is `None`.
+
+        Returns
+        -------
+        e_1b : float
+            One-body energy.
+        """
 
         if gf is None:
             gf = self.gf
@@ -193,7 +234,32 @@ class KGW(BaseKGW, GW):
         return e_1b.real
 
     def energy_gm(self, gf=None, se=None, g0=True):
-        """Calculate the two-body (Galitskii--Migdal) energy."""
+        """Calculate the two-body (Galitskii--Migdal) energy.
+
+        Parameters
+        ----------
+        gf : list of GreensFunction, optional
+            Green's function at each k-point. If `None`, use either
+            `self.gf`, or the mean-field Green's function. Default value
+            is `None`.
+        se : list of SelfEnergy, optional
+            Self-energy at each k-pint. If `None`, use `self.se`.
+            Default value is `None`.
+        g0 : bool, optional
+            If `True`, use the mean-field Green's function. Default
+            value is `True`.
+
+        Returns
+        -------
+        e_2b : float
+            Two-body energy.
+
+        Notes
+        -----
+        With `g0=False`, this function scales as
+        :math:`\mathcal{O}(N^4)` with system size, whereas with
+        `g0=True`, it scales as :math:`\mathcal{O}(N^3)`.
+        """
 
         if gf is None:
             gf = self.gf

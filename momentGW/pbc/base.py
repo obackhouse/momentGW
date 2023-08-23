@@ -26,16 +26,16 @@ class BaseKGW(BaseGW):
         Default value is `False`.
     polarizability : str, optional
         Type of polarizability to use, can be one of `("drpa",
-        "drpa-exact").  Default value is `"drpa"`.
+        "drpa-exact"). Default value is `"drpa"`.
     npoints : int, optional
-        Number of numerical integration points.  Default value is `48`.
+        Number of numerical integration points. Default value is `48`.
     optimise_chempot : bool, optional
         If `True`, optimise the chemical potential by shifting the
         position of the poles in the self-energy relative to those in
-        the Green's function.  Default value is `False`.
+        the Green's function. Default value is `False`.
     fock_loop : bool, optional
         If `True`, self-consistently renormalise the density matrix
-        according to the updated Green's function.  Default value is
+        according to the updated Green's function. Default value is
         `False`.
     fock_opts : dict, optional
         Dictionary of options compatiable with `pyscf.dfragf2.DFRAGF2`
@@ -46,9 +46,9 @@ class BaseKGW(BaseGW):
         a comma-separated string. `"oo"`, `"ov"` and `"vv"` refer to
         compression on the initial ERIs, whereas `"ia"` refers to
         compression on the ERIs entering RPA, which may change under a
-        self-consistent scheme.  Default value is `"ia"`.
+        self-consistent scheme. Default value is `"ia"`.
     compression_tol : float, optional
-        Tolerance for the compression.  Default value is `1e-10`.
+        Tolerance for the compression. Default value is `1e-10`.
     {extra_parameters}
     """
 
@@ -98,6 +98,25 @@ class BaseKGW(BaseGW):
         moments=None,
         integrals=None,
     ):
+        """Driver for the method.
+
+        Parameters
+        ----------
+        nmom_max : int
+            Maximum moment number to calculate.
+        mo_energy : numpy.ndarray
+            Molecular orbital energies.
+        mo_coeff : numpy.ndarray
+            Molecular orbital coefficients.
+        moments : tuple of numpy.ndarray, optional
+            Tuple of (hole, particle) moments, if passed then they will
+            be used instead of calculating them. Default value is
+            `None`.
+        integrals : Integrals, optional
+            Integrals object. If `None`, generate from scratch. Default
+            value is `None`.
+        """
+
         if mo_coeff is None:
             mo_coeff = self.mo_coeff
         if mo_energy is None:
@@ -136,14 +155,20 @@ class BaseKGW(BaseGW):
 
     @staticmethod
     def _gf_to_occ(gf):
+        """
+        Convert `GreensFunction` objects to `mo_occ` arrays at each
+        k-point.
+        """
         return tuple(BaseGW._gf_to_occ(g) for g in gf)
 
     @staticmethod
     def _gf_to_energy(gf):
+        """Return the `energy` attribute of a `gf` at each k-point."""
         return tuple(BaseGW._gf_to_energy(g) for g in gf)
 
     @staticmethod
     def _gf_to_coupling(gf):
+        """Return the `coupling` attribute of a `gf` at each k-point."""
         return tuple(BaseGW._gf_to_coupling(g) for g in gf)
 
     def _gf_to_mo_energy(self, gf):
@@ -176,6 +201,7 @@ class BaseKGW(BaseGW):
 
     @property
     def cell(self):
+        """Cell object."""
         return self._scf.cell
 
     mol = cell
@@ -186,18 +212,22 @@ class BaseKGW(BaseGW):
 
     @property
     def kpts(self):
+        """`KPoints` object."""
         return self._kpts
 
     @property
     def nkpts(self):
+        """Number of k-points."""
         return len(self.kpts)
 
     @property
     def nmo(self):
+        """Number of MOs."""
         nmo = self.get_nmo(per_kpoint=False)
         return nmo
 
     @property
     def nocc(self):
+        """Number of occupied MOs at each k-point."""
         nocc = self.get_nocc(per_kpoint=True)
         return nocc

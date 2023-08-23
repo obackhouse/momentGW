@@ -1,5 +1,6 @@
 [project]
 name = "momentGW"
+version = "1.0.0"
 description = "Moment-constrained GW"
 keywords = [
     "quantum", "chemistry",
@@ -28,12 +29,6 @@ dependencies = [
     "pyscf>=2.0.0",
     "dyson @ git+https://github.com/BoothGroup/dyson@master",
 ]
-dynamic = [
-    "version",
-]
-
-[tools.setuptools.dynamic]
-version = {attr = "momentGW.__version__"}
 
 [build-system]
 requires = [

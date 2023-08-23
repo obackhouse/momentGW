@@ -14,8 +14,8 @@ from momentGW.tda import TDA as MolTDA
 class TDA(MolTDA):
     """
     Compute the self-energy moments using dTDA and numerical integration
-
     with periodic boundary conditions.
+
     Parameters
     ----------
     gw : BaseKGW
@@ -30,14 +30,14 @@ class TDA(MolTDA):
     integrals : KIntegrals
         Density-fitted integrals.
     mo_energy : numpy.ndarray or tuple of numpy.ndarray, optional
-        Molecular orbital energies at each k-point.  If a tuple is passed,
+        Molecular orbital energies at each k-point. If a tuple is passed,
         the first element corresponds to the Green's function basis and
-        the second to the screened Coulomb interaction.  Default value is
+        the second to the screened Coulomb interaction. Default value is
         that of `gw.mo_energy`.
     mo_occ : numpy.ndarray or tuple of numpy.ndarray, optional
-        Molecular orbital occupancies at each k-point.  If a tuple is
+        Molecular orbital occupancies at each k-point. If a tuple is
         passed, the first element corresponds to the Green's function basis
-        and the second to the screened Coulomb interaction.  Default value
+        and the second to the screened Coulomb interaction. Default value
         is that of `gw.mo_occ`.
     """
 
@@ -77,7 +77,13 @@ class TDA(MolTDA):
             self.compression_tol = None
 
     def build_dd_moments(self):
-        """Build the moments of the density-density response."""
+        """Build the moments of the density-density response.
+
+        Returns
+        -------
+        moments : numpy.ndarray
+            Moments of the density-density response.
+        """
 
         cput0 = (lib.logger.process_clock(), lib.logger.perf_counter())
         lib.logger.info(self.gw, "Building density-density moments")
@@ -126,7 +132,23 @@ class TDA(MolTDA):
         return moments
 
     def convolve(self, eta):
-        """Handle the convolution of the moments of G and W."""
+        """
+        Handle the convolution of the moments of the Green's function
+        and screened Coulomb interaction.
+
+        Parameters
+        ----------
+        eta : numpy.ndarray
+            Moments of the density-density response partly transformed
+            into moments of the screened Coulomb interaction.
+
+        Returns
+        -------
+        moments_occ : numpy.ndarray
+            Moments of the occupied self-energy at each k-point.
+        moments_vir : numpy.ndarray
+            Moments of the virtual self-energy at each k-point.
+        """
 
         kpts = self.kpts
 
@@ -169,7 +191,20 @@ class TDA(MolTDA):
         return moments_occ, moments_vir
 
     def build_se_moments(self, moments_dd):
-        """Build the moments of the self-energy via convolution."""
+        """Build the moments of the self-energy via convolution.
+
+        Parameters
+        ----------
+        moments_dd : numpy.ndarray
+            Moments of the density-density response.
+
+        Returns
+        -------
+        moments_occ : numpy.ndarray
+            Moments of the occupied self-energy at each k-point.
+        moments_vir : numpy.ndarray
+            Moments of the virtual self-energy at each k-point.
+        """
 
         cput0 = (lib.logger.process_clock(), lib.logger.perf_counter())
         lib.logger.info(self.gw, "Building self-energy moments")
@@ -218,6 +253,7 @@ class TDA(MolTDA):
         return moments_occ, moments_vir
 
     def build_dd_moments_exact(self):
+        """Build the exact moments of the density-density response."""
         raise NotImplementedError
 
     def build_dd_moments_fc(self):

@@ -15,7 +15,25 @@ from momentGW.ints import Integrals
 
 class KIntegrals(Integrals):
     """
-    Container for the integrals required for KGW methods.
+    Container for the density-fitted integrals required for KGW methods.
+
+    Parameters
+    ----------
+    with_df : pyscf.pbc.df.DF
+        Density fitting object.
+    mo_coeff : np.ndarray
+        Molecular orbital coefficients at each k-point.
+    mo_occ : np.ndarray
+        Molecular orbital occupations at each k-point.
+    compression : str, optional
+        Compression scheme to use. Default value is `'ia'`. See
+        `momentGW.gw` for more details.
+    compression_tol : float, optional
+        Compression tolerance. Default value is `1e-10`. See
+        `momentGW.gw` for more details.
+    store_full : bool, optional
+        Store the full MO integrals in memory. Default value is
+        `False`.
     """
 
     def __init__(
@@ -45,6 +63,12 @@ class KIntegrals(Integrals):
     def get_compression_metric(self):
         """
         Return the compression metric.
+
+        Returns
+        -------
+        rot : numpy.ndarray
+            Rotation matrix into the compressed auxiliary space at each
+            q-point.
         """
 
         # TODO MPI
@@ -120,10 +144,20 @@ class KIntegrals(Integrals):
 
     def transform(self, do_Lpq=None, do_Lpx=True, do_Lia=True):
         """
-        Initialise the integrals, building:
-            - Lpq: the full (aux, MO, MO) array if `store_full`
-            - Lpx: the compressed (aux, MO, MO) array
-            - Lia: the compressed (aux, occ, vir) array
+        Transform the integrals.
+
+        Parameters
+        ----------
+        do_Lpq : bool, optional
+            Whether to compute the full (aux, MO, MO) array. Default
+            value is `True` if `store_full` is `True`, `False`
+            otherwise.
+        do_Lpx : bool, optional
+            Whether to compute the compressed (aux, MO, MO) array.
+            Default value is `True`.
+        do_Lia : bool, optional
+            Whether to compute the compressed (aux, occ, vir) array.
+            Default value is `True`.
         """
 
         # Get the compression metric
@@ -273,7 +307,25 @@ class KIntegrals(Integrals):
         logger.timer(self, "transform", *cput0)
 
     def get_j(self, dm, basis="mo"):
-        """Build the J matrix."""
+        """Build the J matrix.
+
+        Parameters
+        ----------
+        dm : numpy.ndarray
+            Density matrix at each k-point.
+        basis : str, optional
+            Basis in which to build the J matrix. One of
+            `("ao", "mo")`. Default value is `"mo"`.
+
+        Returns
+        -------
+        vj : numpy.ndarray
+            J matrix at each k-point.
+
+        Notes
+        -----
+        The basis of `dm` must be the same as `basis`.
+        """
 
         assert basis in ("ao", "mo")
 
@@ -329,7 +381,25 @@ class KIntegrals(Integrals):
         return vj
 
     def get_k(self, dm, basis="mo", ewald=False):
-        """Build the K matrix."""
+        """Build the K matrix.
+
+        Parameters
+        ----------
+        dm : numpy.ndarray
+            Density matrix at each k-point.
+        basis : str, optional
+            Basis in which to build the K matrix. One of
+            `("ao", "mo")`. Default value is `"mo"`.
+
+        Returns
+        -------
+        vk : numpy.ndarray
+            K matrix at each k-point.
+
+        Notes
+        -----
+        The basis of `dm` must be the same as `basis`.
+        """
 
         assert basis in ("ao", "mo")
 
@@ -394,7 +464,25 @@ class KIntegrals(Integrals):
         return vk
 
     def get_ewald(self, dm, basis="mo"):
-        """Build the Ewald exchange divergence matrix."""
+        """Build the Ewald exchange divergence matrix.
+
+        Parameters
+        ----------
+        dm : numpy.ndarray
+            Density matrix at each k-point.
+        basis : str, optional
+            Basis in which to build the K matrix. One of
+            `("ao", "mo")`. Default value is `"mo"`.
+
+        Returns
+        -------
+        ew : numpy.ndarray
+            Ewald exchange divergence matrix at each k-point.
+
+        Notes
+        -----
+        The basis of `dm` must be the same as `basis`.
+        """
 
         assert basis in ("ao", "mo")
 
@@ -409,47 +497,35 @@ class KIntegrals(Integrals):
 
     @property
     def madelung(self):
-        """
-        Return the Madelung constant for the lattice.
-        """
+        """Return the Madelung constant for the lattice."""
         if self._madelung is None:
             self._madeling = tools.pbc.madelung(self.with_df.cell, self.kpts._kpts)
         return self._madelung
 
     @property
     def Lai(self):
-        """
-        Return the compressed (aux, W vir, W occ) array.
-        """
+        """Return the compressed (aux, W vir, W occ) array."""
         return self._blocks["Lai"]
 
     @property
     def nmo(self):
-        """
-        Return the number of MOs.
-        """
+        """Return the number of MOs."""
         assert len({c.shape[-1] for c in self.mo_coeff}) == 1
         return self.mo_coeff[0].shape[-1]
 
     @property
     def nocc(self):
-        """
-        Return the number of occupied MOs.
-        """
+        """Return the number of occupied MOs."""
         return [np.sum(o > 0) for o in self.mo_occ]
 
     @property
     def nvir(self):
-        """
-        Return the number of virtual MOs.
-        """
+        """Return the number of virtual MOs."""
         return [np.sum(o == 0) for o in self.mo_occ]
 
     @property
     def nmo_g(self):
-        """
-        Return the number of MOs for the Green's function.
-        """
+        """Return the number of MOs for the Green's function."""
         return [c.shape[-1] for c in self.mo_coeff_g]
 
     @property
