@@ -398,6 +398,8 @@ class Integrals:
             if basis == "mo":
                 vk = np.linalg.multi_dot((self.mo_coeff.T, vk, self.mo_coeff))
 
+        return vk
+
     def get_jk(self, dm, **kwargs):
         """Build the J and K matrices.
 
